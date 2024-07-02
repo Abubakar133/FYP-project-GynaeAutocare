@@ -1,0 +1,132 @@
+import { useEffect, useState } from "react";
+import { BASE_URL } from "../../../config";
+import uploadImageToCloudinary from "../../../utils/uploadCloudinary";
+import { AiOutlineDelete } from "react-icons/ai";
+import axios from "axios";
+import { toast } from "react-toastify";
+import useGetProfile from "../useFetchData";
+
+const Profile = () => {
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    cnic: "",
+    bio: "",
+    regno: "",
+    city: "",
+    gender: "",
+    specialization: "",
+    ticketPrice: 0,
+  });
+
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const fetchDoctorProfile = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/doctors/profile/me`);
+      const doctorData = response.data;
+      setFormData({
+        name: doctorData?.name || "",
+        email: doctorData?.email || "",
+        phone: doctorData?.phone || "",
+        cnic: doctorData?.cnic || "",
+        bio: doctorData?.bio || "",
+        regno: doctorData?.regno || "",
+        city: doctorData?.city || "",
+        gender: doctorData?.gender || "",
+        specialization: doctorData?.specialization || "",
+        ticketPrice: doctorData?.ticketPrice || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching doctor profile:", error);
+      toast.error("Failed to fetch doctor profile");
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctorProfile();
+  }, []);
+
+  const handleFileInputChange = async (event) => {
+    const file = event.target.files[0];
+    const data = await uploadImageToCloudinary(file);
+    setFormData({ ...formData, photo: data.url });
+  };
+
+  const updateDoctorHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.put(`${BASE_URL}/doctors/${doctorData._id}`, {
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        return toast.error(result.message);
+      }
+      alert("Successfully updated");
+      toast.success("Successfully updated");
+    } catch (err) {
+      console.error("Error updating doctor profile:", err);
+      toast.error("Failed to update doctor profile");
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-green-100 to-orange-100 shadow-md rounded-lg p-4 mb-2">
+      <div style={{ height: "550px", overflowY: "auto", margin: "30px" }}>
+        {editMode ? (
+          <form>
+            {/* Your form fields */}
+            <button type="submit" onClick={updateDoctorHandler}>
+              Update Profile
+            </button>
+          </form>
+        ) : (
+          <div>
+          <div className="mb-8 bg-gray-100 rounded-lg p-6">
+            <h2 className="text-headingColor font-bold text-3xl leading-9 mb-4">Doctor Profile Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 md:gap-x-8">
+              <div className="mb-4">
+                <p className="text-lg text-gray-800"><span className="font-semibold">Name:</span> {formData.name}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Email:</span> {formData.email}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Phone:</span> {formData.phone}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">CNIC:</span> {formData.cnic}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Bio:</span> {formData.bio}</p>
+              </div>
+              <div className="mb-4">
+                <p className="text-lg text-gray-800"><span className="font-semibold">Registration No:</span> {formData.regno}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">City:</span> {formData.city}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Gender:</span> {formData.gender}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Specialization:</span> {formData.specialization}</p>
+                <p className="text-lg text-gray-800"><span className="font-semibold">Ticket Price:</span> {formData.ticketPrice}</p>
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={toggleEditMode} 
+            className="bg-[#0067FF] text-white py-3 px-6 rounded-md text-lg hover:bg-blue-700 transition duration-300"
+          >
+            Edit Profile
+          </button>
+        </div>
+        
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
